@@ -2,11 +2,14 @@
 
 #define STX 0x02
 #define ETX 0x03
+#define CR  0x0D
+#define LF  0x0A
 
 SlaveThread::SlaveThread() :
     QThread(NULL),
     m_running(false),
-    m_baud(115200), m_databits(QSerialPort::Data8), m_stopbits(QSerialPort::OneStop), m_parity(QSerialPort::NoParity)
+    m_baud(115200), m_databits(QSerialPort::Data8), m_stopbits(QSerialPort::OneStop), m_parity(QSerialPort::NoParity),
+    m_address(0), m_useLF(true)
 {
 }
 
@@ -39,16 +42,130 @@ void SlaveThread::slaveStop()
     m_running = false;
 }
 
-void SlaveThread::setResponseMessage(const QString &message)
+void SlaveThread::setAddress(uint address)
 {
     QMutexLocker locker(&m_mutex);
-    m_respMsg = message;
+    m_address = address;
 }
 
-QByteArray SlaveThread::getResponseMessage() const
+void SlaveThread::setUseLF(bool use)
 {
     QMutexLocker locker(&m_mutex);
-    return m_respMsg.toLatin1();
+    m_useLF = use;
+}
+
+void SlaveThread::setResponseR20(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR20 = message;
+}
+
+QByteArray SlaveThread::getResponseR20() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR20.toLatin1();
+}
+
+void SlaveThread::setResponseR26(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR26 = message;
+}
+
+QByteArray SlaveThread::getResponseR26() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR26.toLatin1();
+}
+
+void SlaveThread::setResponseR30(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR30 = message;
+}
+
+QByteArray SlaveThread::getResponseR30() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR30.toLatin1();
+}
+
+void SlaveThread::setResponseR40(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR40 = message;
+}
+
+QByteArray SlaveThread::getResponseR40() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR40.toLatin1();
+}
+
+void SlaveThread::setResponseR45(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR45 = message;
+}
+
+QByteArray SlaveThread::getResponseR45() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR45.toLatin1();
+}
+
+void SlaveThread::setResponseCmd50(int error)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respCmd50 = error;
+}
+
+void SlaveThread::setResponseR70_08(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR70_08 = message;
+}
+
+QByteArray SlaveThread::getResponseR70_08() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR70_08.toLatin1();
+}
+
+void SlaveThread::setResponseR70_10(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR70_10 = message;
+}
+
+QByteArray SlaveThread::getResponseR70_10() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR70_10.toLatin1();
+}
+
+void SlaveThread::setResponseR71(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR71 = message;
+}
+
+QByteArray SlaveThread::getResponseR71() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR71.toLatin1();
+}
+
+void SlaveThread::setResponseR79(const QString &message)
+{
+    QMutexLocker locker(&m_mutex);
+    m_respR79 = message;
+}
+
+QByteArray SlaveThread::getResponseR79() const
+{
+    QMutexLocker locker(&m_mutex);
+    return m_respR79.toLatin1();
 }
 
 void SlaveThread::run()
@@ -85,7 +202,7 @@ void SlaveThread::response(QSerialPort &serial)
 
     for( int i = 0; i < recv.size(); i++ )
     {
-        if( recv.at(i) == STX )
+        if( recv.at(i) == '@' )
         {
             parsed.clear();
             parsed.append(recv.at(i));
@@ -94,7 +211,7 @@ void SlaveThread::response(QSerialPort &serial)
         else if( stx )
         {
             parsed.append(recv.at(i));
-            if( recv.at(i) == ETX )
+            if( recv.at(i) == CR )
             {
                 etx = true;
                 break;
@@ -125,10 +242,93 @@ void SlaveThread::response(QSerialPort &serial)
 QByteArray SlaveThread::makeResp(const QByteArray &recv)
 {
     QByteArray ret;
+    QString cmd = recv.mid(3, 2);
+    int cmdNo = 0;
 
-    ret.append(STX);
-    ret.append(getResponseMessage());
-    ret.append(ETX);
+    if( cmd.at(0) != '5' )
+    {
+        cmdNo = cmd.toInt();
+    }
+
+    ret.append('@');
+    ret.append(QString("%1").arg(m_address, 2, 10, QChar('0')).trimmed());
+    ret.append(cmd.trimmed());
+
+    if( 20 <= cmdNo && cmdNo <= 25 )
+    {
+        ret.append(getResponseR20());
+    }
+    else if( cmdNo == 26 )
+    {
+        ret.append(getResponseR26());
+    }
+    else if( 30 <= cmdNo && cmdNo <= 39 )
+    {
+        ret.append(getResponseR30());
+    }
+    else if( 40 <= cmdNo && cmdNo <= 42 )
+    {
+        ret.append(getResponseR40());
+    }
+    else if( 45 <= cmdNo && cmdNo <= 46 )
+    {
+        ret.append(getResponseR45());
+    }
+    else if( cmd.at(0) == '5' )
+    {
+        if( m_respCmd50 > 0 )
+        {
+            ret.clear();
+            ret.append('@');
+            ret.append(QString("%1").arg(m_address, 2, 10, QChar('0')).trimmed());
+            ret.append(QString("ER").trimmed());
+            ret.append(QString("%1").arg(m_respCmd50, 2, 10, QChar('0')).trimmed());
+        }
+    }
+    else if( 60 <= cmdNo && cmdNo <= 69 )
+    {
+        ret.append(recv.mid(5, 9));
+        emit receivedW60(QString(recv.mid(5, 9)));
+    }
+    else if( 70 == cmdNo && (recv.indexOf(CR) - 7) == 6 )
+    {
+        ret.append(recv.mid(5, 2));
+        ret.append(recv.mid(7, (recv.indexOf(CR) - 7)));
+        emit receivedW70(recv.mid(7, (recv.indexOf(CR) - 7)));
+    }
+    else if( 71 == cmdNo && (recv.indexOf(CR) - 7) == 6 )
+    {
+        ret.append(recv.mid(5, 2));
+        ret.append(getResponseR71());
+    }
+    else if( (70 <= cmdNo && cmdNo <= 75) && (recv.indexOf(CR) - 7) == 10 )
+    {
+        ret.append(recv.mid(5, 2));
+        ret.append(getResponseR70_08());
+    }
+    else if( (70 <= cmdNo && cmdNo <= 75) && (recv.indexOf(CR) - 7) == 11 )
+    {
+        ret.append(recv.mid(5, 2));
+        ret.append(getResponseR70_10());
+    }
+    else if( (80 <= cmdNo && cmdNo <= 85) && (recv.indexOf(CR) - 7) == 10 )
+    {
+        ret.append(recv.mid(7, (recv.indexOf(CR) - 7)));
+        emit receivedW80_08(recv.mid(7, (recv.indexOf(CR) - 7)));
+    }
+    else if( (80 <= cmdNo && cmdNo <= 85) && (recv.indexOf(CR) - 7) == 11 )
+    {
+        ret.append(recv.mid(7, (recv.indexOf(CR) - 7)));
+        emit receivedW80_10(recv.mid(7, (recv.indexOf(CR) - 7)));
+    }
+    else if( 79 == cmdNo )
+    {
+        ret.append(recv.mid(5, 2));
+        ret.append(getResponseR79());
+    }
+
+    ret.append(CR);
+    ret.append(LF);
 
     return ret;
 }
