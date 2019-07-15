@@ -14,9 +14,11 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
     mainwindow.cpp \
-    SlaveThread.cpp
+    SlaveThread.cpp \
+    HyoFrame.cpp
 
 HEADERS  += mainwindow.h \
-    SlaveThread.h
+    SlaveThread.h \
+    HyoFrame.h
 
 FORMS    += mainwindow.ui
