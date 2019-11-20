@@ -14,6 +14,7 @@ private:
 public:
     explicit HyoFrame();
     explicit HyoFrame(const QByteArray &src);
+    explicit HyoFrame(const char *data, int size);
     ~HyoFrame();
 
     inline int size() const { return m_data.size(); }
@@ -24,16 +25,15 @@ public:
     inline QByteArray toByteArray() const { return m_data; }
 
     quint8 readU1() const;
-    quint16 readU2(bool isBigEndian = false) const;
-    quint32 readU4(bool isBigEndian = false) const;
-    quint64 readU8(bool isBigEndian = false) const;
-    void readBuf(char *dst, int size);
+    quint16 readU2(bool isLittleEndian = false) const;
+    quint32 readU4(bool isLittleEndian = false) const;
+    quint64 readU8(bool isLittleEndian = false) const;
+    void readBuf(char *dst, int size) const;
 
-    void writeI1(const qint8 val);
     void writeU1(const quint8 val);
-    void writeU2(const quint16 val, bool isBigEndian = false);
-    void writeU4(const quint32 val, bool isBigEndian = false);
-    void writeU8(const quint64 val, bool isBigEndian = false);
+    void writeU2(const quint16 val, bool isLittleEndian = false);
+    void writeU4(const quint32 val, bool isLittleEndian = false);
+    void writeU8(const quint64 val, bool isLittleEndian = false);
     void writeBuf(const char *src, int size);
     void writeBuf(const uchar *src, int size);
 

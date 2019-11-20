@@ -9,9 +9,16 @@ HyoFrame::HyoFrame() :
 }
 
 HyoFrame::HyoFrame(const QByteArray &src) :
-    m_data(src)
+    m_data(src),
+    m_idx(0)
 {
 
+}
+
+HyoFrame::HyoFrame(const char *data, int size) :
+    m_data(data, size),
+    m_idx(0)
+{
 }
 
 HyoFrame::~HyoFrame()
@@ -41,13 +48,13 @@ quint8 HyoFrame::readU1() const
     return val;
 }
 
-quint16 HyoFrame::readU2(bool isBigEndian) const
+quint16 HyoFrame::readU2(bool isLittleEndian) const
 {
     quint16 val = 0;
 
     if( checkSize(sizeof(quint16)) )
     {
-        if( !isBigEndian ) {
+        if( isLittleEndian ) {
             val = qToLittleEndian(*reinterpret_cast<const quint16*>(m_data.data()+m_idx));
         } else {
             val = qToBigEndian(*reinterpret_cast<const quint16*>(m_data.data()+m_idx));
@@ -58,13 +65,13 @@ quint16 HyoFrame::readU2(bool isBigEndian) const
     return val;
 }
 
-quint32 HyoFrame::readU4(bool isBigEndian) const
+quint32 HyoFrame::readU4(bool isLittleEndian) const
 {
     quint32 val = 0;
 
     if( checkSize(sizeof(quint32)) )
     {
-        if( !isBigEndian ) {
+        if( isLittleEndian ) {
             val = qToLittleEndian(*reinterpret_cast<const quint32*>(m_data.data()+m_idx));
         } else {
             val = qToBigEndian(*reinterpret_cast<const quint32*>(m_data.data()+m_idx));
@@ -75,13 +82,13 @@ quint32 HyoFrame::readU4(bool isBigEndian) const
     return val;
 }
 
-quint64 HyoFrame::readU8(bool isBigEndian) const
+quint64 HyoFrame::readU8(bool isLittleEndian) const
 {
     quint64 val = 0;
 
     if( checkSize(sizeof(quint64)) )
     {
-        if( !isBigEndian ) {
+        if( isLittleEndian ) {
             val = qToLittleEndian(*reinterpret_cast<const quint64*>(m_data.data()+m_idx));
         } else {
             val = qToBigEndian(*reinterpret_cast<const quint64*>(m_data.data()+m_idx));
@@ -92,7 +99,7 @@ quint64 HyoFrame::readU8(bool isBigEndian) const
     return val;
 }
 
-void HyoFrame::readBuf(char *dst, int size)
+void HyoFrame::readBuf(char *dst, int size) const
 {
     memset(dst, 0, static_cast<uint>(size));
 
@@ -103,74 +110,62 @@ void HyoFrame::readBuf(char *dst, int size)
     }
 }
 
-void HyoFrame::writeI1(const qint8 val)
-{
-    int dataSize = sizeof(qint8);
-
-    if( m_idx+dataSize > m_data.size() ) {
-        m_data.append(m_idx+dataSize-m_data.size(), static_cast<char>(0));
-    }
-
-    m_data.data()[m_idx] = val;
-    m_idx += dataSize;
-}
-
 void HyoFrame::writeU1(const quint8 val)
 {
     int dataSize = sizeof(quint8);
 
     if( m_idx+dataSize > m_data.size() ) {
-        m_data.append(m_idx+dataSize-m_data.size(), static_cast<char>(0));
+        m_data.resize(m_idx+dataSize);
     }
 
     m_data.data()[m_idx] = static_cast<char>(val);
     m_idx += dataSize;
 }
 
-void HyoFrame::writeU2(const quint16 val, bool isBigEndian)
+void HyoFrame::writeU2(const quint16 val, bool isLittleEndian)
 {
     int dataSize = sizeof(quint16);
 
     if( m_idx+dataSize > m_data.size() ) {
-        m_data.append(m_idx+dataSize-m_data.size(), static_cast<char>(0));
+        m_data.resize(m_idx+dataSize);
     }
 
-    if( !isBigEndian ) {
-        qToLittleEndian(val, m_data.data()+m_idx);
+    if( isLittleEndian ) {
+        qToLittleEndian(val, reinterpret_cast<uchar*>(m_data.data()+m_idx));
     } else {
-        qToBigEndian(val, m_data.data()+m_idx);
+        qToBigEndian(val, reinterpret_cast<uchar*>(m_data.data()+m_idx));
     }
     m_idx += dataSize;
 }
 
-void HyoFrame::writeU4(const quint32 val, bool isBigEndian)
+void HyoFrame::writeU4(const quint32 val, bool isLittleEndian)
 {
     int dataSize = sizeof(quint32);
 
     if( m_idx+dataSize > m_data.size() ) {
-        m_data.append(m_idx+dataSize-m_data.size(), static_cast<char>(0));
+        m_data.resize(m_idx+dataSize);
     }
 
-    if( !isBigEndian ) {
-        qToLittleEndian(val, m_data.data()+m_idx);
+    if( isLittleEndian ) {
+        qToLittleEndian(val, reinterpret_cast<uchar*>(m_data.data()+m_idx));
     } else {
-        qToBigEndian(val, m_data.data()+m_idx);
+        qToBigEndian(val, reinterpret_cast<uchar*>(m_data.data()+m_idx));
     }
     m_idx += dataSize;
 }
 
-void HyoFrame::writeU8(const quint64 val, bool isBigEndian)
+void HyoFrame::writeU8(const quint64 val, bool isLittleEndian)
 {
     int dataSize = sizeof(quint64);
 
     if( m_idx+dataSize > m_data.size() ) {
-        m_data.append(m_idx+dataSize-m_data.size(), static_cast<char>(0));
+        m_data.resize(m_idx+dataSize);
     }
 
-    if( !isBigEndian ) {
-        qToLittleEndian(val, m_data.data()+m_idx);
+    if( isLittleEndian ) {
+        qToLittleEndian(val, reinterpret_cast<uchar*>(m_data.data()+m_idx));
     } else {
-        qToBigEndian(val, m_data.data()+m_idx);
+        qToBigEndian(val, reinterpret_cast<uchar*>(m_data.data()+m_idx));
     }
     m_idx += dataSize;
 }
@@ -178,7 +173,7 @@ void HyoFrame::writeU8(const quint64 val, bool isBigEndian)
 void HyoFrame::writeBuf(const char *src, int size)
 {
     if( m_idx+size > m_data.size() ) {
-        m_data.append(m_idx+size-m_data.size(), static_cast<char>(0));
+        m_data.resize(m_idx+size);
     }
 
     memcpy(m_data.data()+m_idx, src, static_cast<size_t>(size));
@@ -188,7 +183,7 @@ void HyoFrame::writeBuf(const char *src, int size)
 void HyoFrame::writeBuf(const uchar *src, int size)
 {
     if( m_idx+size > m_data.size() ) {
-        m_data.append(m_idx+size-m_data.size(), static_cast<char>(0));
+        m_data.resize(m_idx+size);
     }
 
     memcpy(m_data.data()+m_idx, src, static_cast<size_t>(size));
@@ -197,7 +192,7 @@ void HyoFrame::writeBuf(const uchar *src, int size)
 
 void HyoFrame::writeStreamAsciiToBin(const HyoFrame *src)
 {
-    if( src == nullptr ) return;
+    if( src == NULL ) return;
 
     bool ok = false;
     const char* srcBuf = src->data();
@@ -215,7 +210,7 @@ void HyoFrame::writeStreamAsciiToBin(const HyoFrame *src)
 
 void HyoFrame::writeStreamBinToAscii(const HyoFrame *src)
 {
-    if( src == nullptr ) return;
+    if( src == NULL ) return;
 
     const char* srcBuf = src->data();
     QString temp;
