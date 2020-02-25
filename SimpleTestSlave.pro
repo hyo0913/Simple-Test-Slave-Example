@@ -11,14 +11,15 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = SimpleTestSlave
 TEMPLATE = app
 
+PROJECTPATH = $$PWD
+
+include(../HyoCommon/HyoCommon.pri)
 
 SOURCES += main.cpp\
     mainwindow.cpp \
-    SlaveThread.cpp \
-    HyoFrame.cpp
+    SlaveThread.cpp
 
 HEADERS  += mainwindow.h \
-    SlaveThread.h \
-    HyoFrame.h
+    SlaveThread.h
 
 FORMS    += mainwindow.ui
